@@ -109,19 +109,67 @@
                     .attr("transform","translate("+margin.left+","+margin.top+")");
 
     // "../datasets/blockbusters.csv"
-    // data.forEach( d => {
-    //   d['worldwide_gross'] = Number( d['worldwide_gross'].replace(/,/g, "").replace(/\$/g,"") );
-    // });
+    const loadScatter = async function(){
+    let data = await d3.csv("../datasets/blockbusters.csv", d3.autoType);
+
+    console.log(data)
+
+    data.forEach( d => {
+      d['worldwide_gross'] = Number( d['worldwide_gross'].replace(/,/g, "").replace(/\$/g,"") );
+    });
+
+    // position, area/size, color hue
+    const yearExtent = d3.extent(data, d => d['year'])
+    const yearScale = d3.scaleLinear().domain(yearExtent).range([0, chartWidth])
+
+    const grossExtent = d3.extent(data, d => d['worldwide_gross'])
+    const grossScale = d3.scaleLog().domain(grossExtent).range([chartHeight, 0])
+
+    const imdbExtent = d3.extent(data, d => d['imdb_rating'])
+    const imdbScale = d3.scaleLinear().domain(imdbExtent).range([3,8])
+
+    const genreScale = d3.scaleOrdinal(d3.schemeCategory10);
 
     
-    // < NEW CODE HERE >
+    let leftAxis = d3.axisLeft(grossScale).tickFormat(d3.format("$.0s"));
+    let leftGridlines = d3.axisLeft(grossScale)
+                          .tickFormat("")
+                          .tickSize(-chartWidth-10);
+    annotations.append("g").attr("class", "y axis")
+               .attr("transform", `translate(${margin.left-10},${margin.top})`)
+               .call(leftAxis);
+
+    annotations.append("g").attr("class", "y gridlines")
+                .attr("transform", `translate(${margin.left-10},${margin.top})`)
+                .call(leftGridlines);   
+                  
+    let bottomAxis = d3.axisBottom(yearScale).tickFormat(d3.format(""));
+    let bottomGridlines = d3.axisBottom(yearScale)
+                            .tickFormat("")
+                            .tickSize(-chartHeight - 10);
+    annotations.append("g").attr("class", "x axis")
+      .attr("transform", `translate(${margin.left},${chartHeight+margin.top+10})`)
+      .call(bottomAxis);
+
+    annotations.append("g").attr("class", "x gridlines")
+      .attr("transform", `translate(${margin.left},${chartHeight+margin.top+10})`)
+      .call(bottomGridlines);   
+
+    let circles = chartArea.selectAll("circle.point")
+                           .data(data)
+                           .join("circle")
+                           .attr("class", "point")
+                           .attr("opacity", 0.8)
+                           .attr("cx", d => yearScale(d['year']))
+                           .attr("cy", d => grossScale(d['worldwide_gross']))
+                           .attr("r", d => imdbScale(d['imdb_rating']))
+                           .attr("fill", d => genreScale(d['Main_Genre']))
+
     
-    
-        
-          
-    
-    // < NEW CODE HERE >
-    
+    // see notes from class                       
+
+    } 
+    loadScatter();
 
     // HELPER FUNCTION
     //  lighten a color a little bit using d3 color functions
