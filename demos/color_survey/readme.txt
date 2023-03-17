@@ -45,3 +45,29 @@ In a command line:
 
 
 * Finally, commit your code and update the server so that it will run. Check for errors.
+
+
+
+***** HELPFUL LINKS *****
+-Guides some of the lesson was based upon
+https://testdriven.io/blog/flask-render-deployment/
+https://render.com/docs/deploy-flask
+
+-Installing Postgres
+Intel Mac
+https://chartio.com/resources/tutorials/how-to-start-postgresql-server-on-mac-os-x/
+
+M1 Mac
+https://sqlpad.io/tutorial/postgres-mac-installation
+https://gist.github.com/phortuin/2fe698b6c741fd84357cec84219c6667
+
+Windows
+https://wiki.postgresql.org/wiki/Homebrew
+https://www.datacamp.com/tutorial/installing-postgresql-windows-macosx
+
+-Postgres + Flask overviews
+https://realpython.com/flask-by-example-part-2-postgres-sqlalchemy-and-alembic/
+https://www.digitalocean.com/community/tutorials/how-to-use-a-postgresql-database-in-a-flask-application
+
+-SQLAlchemy
+https://docs.sqlalchemy.org/en/14/faq/index.html
