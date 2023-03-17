@@ -7,10 +7,6 @@ from flask_sqlalchemy import SQLAlchemy  # helper functions for db access via po
 from flask_compress import Compress  # helper functions for compressing server responses
 from flask_cors import CORS  # helper functions for cross-origin requests
 
-# getenv checks the operating system for "environment variables"
-# Render will use the DATABASE_URL environment variable to store where the db lives
-# We manually set SQLALCHEMY_DATABASE_URI on our machine to point to our db 
-# (the fallback is to make a sqlite database)
 if os.getenv('SQLALCHEMY_DATABASE_URI'):
   SQLALCHEMY_DATABASE_URI = os.getenv('SQLALCHEMY_DATABASE_URI').replace("postgres://", "postgresql://", 1)
 elif os.getenv('DATABASE_URL'):
@@ -18,8 +14,6 @@ elif os.getenv('DATABASE_URL'):
 else:
   SQLALCHEMY_DATABASE_URI = f"sqlite:///{os.path.join(BASEDIR, 'instance', 'app.db')}"
 
-# create the app instance and configure it so SQLAlchemy has the right settings
-# whitenoise will host our static files such as CSS
 app = Flask( __name__ )
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['SQLALCHEMY_DATABASE_URI'] = SQLALCHEMY_DATABASE_URI
@@ -27,10 +21,10 @@ app.config['COMPRESS_MIMETYPES'] = ['text/html','text/css','text/plain']
 app.wsgi_app = WhiteNoise(app.wsgi_app, root='static/', prefix='static/', index_file="index.htm", autorefresh=True)
 compress = Compress(app)
 cors = CORS(app)
-db = SQLAlchemy(app)  # the db object will be our point of connection to Postgres
+db = SQLAlchemy(app)
 
 # put your database class at the top of the file
-class Entry( db.Model ):    # new tables in the db inherit db.Model
+class Entry( db.Model ):
     __tablename__ = "colorData"
     
     # specify the columns in our new table
@@ -41,7 +35,7 @@ class Entry( db.Model ):    # new tables in the db inherit db.Model
     colorBlind = db.Column(db.String(10), nullable=False)
     surveyType = db.Column(db.String(20), nullable=False)
     
-    # init will make life easier later when we have to make new rows
+    # init will make life easier later
     def __init__(self, colVal, colName, genIdent, colBlind, survType):
         self.colorValue = colVal
         self.colorName = colName
@@ -49,9 +43,9 @@ class Entry( db.Model ):    # new tables in the db inherit db.Model
         self.colorBlind = colBlind
         self.surveyType = survType
     
-    # get data back easily so we can print it out later
+    # get data back easily
     def getRow(self):
-        return [ self.colorValue, self.colorName, self.genderIdentity, self.colorBlind, self.surveyType ]
+        return [ self.id, self.colorValue, self.colorName, self.genderIdentity, self.colorBlind, self.surveyType ]
 
 # init database here
 # make our table if we need to make it
@@ -73,16 +67,10 @@ def hello():
         
 def randomChroma():
     # Random function to generate fully saturated colors on surface of color cube
-    # Will return a string with an HTML color e.g. "#00cc00"
-    # Not only will these be easier to visualize, but they also will be more vivid
-    # Muddy greys (unsaturated colors) don't make for interesting survey results
-    
-    # Start with random r,g,b
     r = random.randint(0,255)
     g = random.randint(0,255)
     b = random.randint(0,255)
     
-    # Now make the color fully saturated (i.e. if it were HSV, then S=100%)
     # The intuition here is that fully saturated colors MUST have either a 0 or 255 value on
     #  at least one of the color channels (so that it's on one of the sides of the cube)
     c = random.choice(['r','g','b'])
@@ -101,8 +89,7 @@ def randomChroma():
         elif c == 'b':
             b = 255
     
-    # format up the string
-    return '#%02x%02x%02x' % (r, g, b)  
+    return '#%02x%02x%02x' % (r, g, b)  #   
      
 
 # serve one survey template
@@ -110,8 +97,6 @@ def randomChroma():
 @app.route('/survey', methods=['POST', 'GET'])
 def survey():
     
-    # a browser sends a POST request whenever you press submit within a <form> object
-    # if you just visit a page, chances are it is sending a GET request
     if request.method == "POST":
         # handle getting data sent by clients
         # push data into the database
@@ -131,49 +116,41 @@ def survey():
             print(e)
             sys.stdout.flush()
             
+        
         # store genIdent and colBlind to autofill
+        
+        
     else:
-        # new GET request, we don't have previous answers to store
         genIdent=""
         colBlind=""
     
-    # Whether it was a POST or a GET, let's send some survey HTML to the client
-    
-    # could randomize survey provided here
     surveyTemplate = 'color_name_survey.htm'
     
     colName = ""
     colValue = randomChroma()
     
-    # check out the template for values within {{ these }} for insertion points
-    # this templating language is a simple alternative to PHP
-    # note that it will use the previous genIdent and colBlind values it was a POST
     return render_template(surveyTemplate, colorName=colName,
                                            colorVal=colValue,
                                            genderIdent=genIdent,
                                            colorBlind=colBlind ) 
+    
     
 
 # send a CSV of the database entries to the user
 #  usually not a good idea to publish raw DB contents, but here we have no identifiable information hopefully
 @app.route('/dump_data')    
 def dump():
-    output = io.StringIO()  # this is an empty receptacle (memory buffer) for strings
+    output = io.StringIO()  # this is an empty receptacle for string contents
     writer = csv.writer(output)  # we feed in the output of the writer to the receptacle
-    
-    # start by making some column headers
     writer.writerow( ['id','colorValue','colorName','genderIdentity','colorBlind','surveyType'] )
     
     # loop through all Entry rows in their table
-    # To query a table, access the class corresponding to the table
-    # Because it inherits db.Model, it has static functions related to database queries!
-    # This is your main way of querying for data (here we just use .all() to get all data)
-    entries = Entry.query.all() 
+    entries = Entry.query.all()
     for e in entries:
-        writer.writerow( e.getRow() )  # we use the getRow function we wrote!
+        writer.writerow( e.getRow() )
     
     # compose a response
-    response = make_response( output.getvalue() )  # dump buffer contents into response
+    response = make_response( output.getvalue() )
     response.headers['Content-Type'] = 'text/plain'  # specify a MIME type so the browser knows how to present it
     return response
         
