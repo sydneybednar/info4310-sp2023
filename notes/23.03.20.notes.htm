@@ -71,7 +71,15 @@
     context.lineCap = "round";
 
     // Handle touch events for as many fingers as will fit on screen
-    
+    canvas.on("touchstart", event => {}) // just FYI
+          .on("touchmove", event => {event.preventDefault(); }) // prevent scrolling
+          .on("pointerup", event => console.log("pointerup",event))
+          .on("pointerdown", event => {
+            
+        // pointer down
+        console.log("pointerdown", event);
+        
+      });
     
     
     
